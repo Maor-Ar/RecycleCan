@@ -5,6 +5,9 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -23,11 +26,56 @@ import com.felhr.usbserial.UsbSerialDevice;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.UUID;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    BluetoothSocket btSocket = null;
+    static final UUID mUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     Button scanBtn;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        //Bluetooth stuff
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothDevice hc05 = btAdapter.getRemoteDevice("00:18:91:D8:3B:DC"); // Specific MAC address to my Bt device
+
+        //Making the connection
+
+        int counter = 0;
+        do {
+            try {
+                btSocket = hc05.createRfcommSocketToServiceRecord(mUUID);
+                System.out.println(btSocket);
+                btSocket.connect();
+                System.out.println(btSocket.isConnected());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            counter++;
+        } while (!btSocket.isConnected() && (counter < 3));
+
+        //Sending a test signal
+        try {
+            OutputStream outputStream = btSocket.getOutputStream();
+            outputStream.write('A');
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //Closing the connection
+//        try {
+//            btSocket.close();
+//            System.out.println(btSocket.isConnected());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
+
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -74,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ScanCode();
     }
 
-    private void ScanCode() {
+    private void ScanCode(){
         IntentIntegrator integrator = new IntentIntegrator(this);
         integrator.setCaptureActivity(CaptureAct.class);
         integrator.setOrientationLocked(false);
@@ -104,7 +152,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         //int binNum = findRecycleBinViaBarcode(result.getContents());
 
                         //!! (Missing stuff) Send command to arduino to open the can
-                        //openBin(binNum);
+                        openBin('A');
+                        System.out.println("Sending letter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
                     }
                 });
@@ -118,5 +167,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }else{
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    private void openBin(char a) {
+        //Bluetooth stuff
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothDevice hc05 = btAdapter.getRemoteDevice("00:18:91:D8:3B:DC"); // Specific MAC address to my Bt device
+
+        //Making the connection
+//        BluetoothSocket btSocket = null;
+//        int counter = 0;
+//        do {
+//            try {
+//                btSocket = hc05.createRfcommSocketToServiceRecord(mUUID);
+//                System.out.println(btSocket);
+//                btSocket.connect();
+//                System.out.println(btSocket.isConnected());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            counter++;
+//        } while (!btSocket.isConnected() && (counter < 3));
+
+        try {
+            OutputStream outputStream = btSocket.getOutputStream();
+            outputStream.write('A');
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+//        try {
+//            btSocket.close();
+//            System.out.println(btSocket.isConnected());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
+
     }
 }
